@@ -198,6 +198,64 @@
   .confetti{position:fixed;top:-10px;width:10px;height:14px;z-index:41;animation:fall linear forwards}
   @keyframes fall{to{transform:translateY(105vh) rotate(540deg)}}
   footer.tiny{text-align:center;color:var(--ink-soft);font-size:12px;margin-top:26px;opacity:.7}
+
+  /* battery counter */
+  .battery-bar{display:flex;align-items:center;justify-content:center;gap:8px;
+    margin-bottom:10px;font-family:'Fredoka',sans-serif;font-weight:600;font-size:15px;
+    background:rgba(79,209,197,.12);border:1px solid var(--teal);border-radius:12px;padding:8px 14px}
+  .battery-bar.complete{background:rgba(255,216,107,.18);border-color:var(--gold);
+    animation:homeglow 1.5s ease-in-out infinite}
+  .facing-hint{text-align:center;font-size:13px;color:var(--ink-soft);margin-bottom:8px;font-weight:600}
+
+  /* reorder buttons */
+  .node .reorder,.loop-head .reorder{display:inline-flex;gap:2px;margin-left:4px}
+  .node .reorder button,.loop-head .reorder button{width:20px;height:20px;border:none;border-radius:6px;
+    cursor:pointer;background:rgba(0,0,0,.2);color:#fff;font-size:11px;line-height:1;
+    display:grid;place-items:center}
+  .node .reorder button:disabled,.loop-head .reorder button:disabled{opacity:.3;cursor:not-allowed}
+
+  /* walking */
+  .bot-inner.walking{animation:walkbob .22s ease infinite}
+  @keyframes walkbob{50%{transform:translateY(-4px) scale(1.02)}}
+
+  /* mobile tabs */
+  .mobile-tabs{display:none;gap:8px;margin:12px 0 0;justify-content:center}
+  .mobile-tabs .tab-btn{flex:1;font-family:'Fredoka',sans-serif;font-weight:600;font-size:14px;
+    border:2px solid var(--line);background:var(--panel);color:var(--ink-soft);
+    padding:10px;border-radius:14px;cursor:pointer;transition:border-color .2s,color .2s}
+  .mobile-tabs .tab-btn.active{border-color:var(--amber);color:var(--ink);
+    background:linear-gradient(180deg,var(--panel-2),var(--panel))}
+  @media(max-width:879px){
+    .mobile-tabs{display:flex}
+    .board-grid.tab-forest .card-code{display:none}
+    .board-grid.tab-code .card-forest{display:none}
+  }
+
+  /* header tools */
+  .header-tools{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px}
+  .tool-btn{background:var(--panel);border:2px solid var(--line);color:var(--ink-soft);
+    width:40px;height:40px;border-radius:12px;cursor:pointer;font-size:18px;
+    display:grid;place-items:center;transition:border-color .2s,color .2s}
+  .tool-btn:hover,.tool-btn.active{border-color:var(--amber);color:var(--ink)}
+  .tool-btn.muted{opacity:.5}
+
+  .btn.step{background:linear-gradient(180deg,#9ed4ff,#5ba8e8);color:#0c2a4a;flex:0 0 auto;min-width:0}
+
+  /* sandbox */
+  .sandbox-tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .sandbox-tools .sb-tool{font-family:'Fredoka',sans-serif;font-weight:600;font-size:13px;
+    border:2px solid var(--line);background:var(--panel);color:var(--ink-soft);
+    padding:8px 12px;border-radius:12px;cursor:pointer;transition:border-color .2s}
+  .sandbox-tools .sb-tool.active{border-color:var(--teal);color:var(--ink);background:rgba(79,209,197,.12)}
+  .tile.editable{cursor:pointer}
+  .tile.editable:hover{outline:2px solid rgba(255,180,84,.5);outline-offset:-2px}
+
+  /* educator bar */
+  .educator-bar{background:rgba(181,140,255,.14);border:1px solid var(--purple);
+    border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px;display:none}
+  .educator-bar.show{display:block}
+  .educator-bar button{margin-top:8px;background:var(--purple);color:#fff;border:none;
+    font-family:'Fredoka',sans-serif;font-weight:600;padding:6px 12px;border-radius:10px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -206,13 +264,25 @@
   <header class="top">
     <p class="subtitle">🦊 A coding adventure 🌲</p>
     <h1 class="title">Sprocket's Journey Home</h1>
+    <div class="header-tools">
+      <button class="tool-btn" id="soundBtn" title="Toggle sound" aria-label="Toggle sound">🔊</button>
+    </div>
   </header>
 
   <nav class="chapters" id="chapters"></nav>
 
-  <div class="board-grid">
+  <nav class="mobile-tabs" id="mobileTabs" aria-label="Forest and code panels">
+    <button type="button" class="tab-btn active" data-tab="forest">🌲 Forest</button>
+    <button type="button" class="tab-btn" data-tab="code">📜 Code</button>
+  </nav>
+
+  <div class="board-grid tab-forest" id="boardGrid">
     <!-- LEFT: story + forest -->
-    <section class="card">
+    <section class="card card-forest">
+      <div class="educator-bar" id="educatorBar">
+        <b>Educator mode</b> — hints shown by default. Use Export to copy the level grid for worksheets.
+        <button type="button" id="exportBtn">📋 Export level grid</button>
+      </div>
       <div class="story">
         <div class="face" id="story-face">🦊</div>
         <div class="bubble">
@@ -220,6 +290,18 @@
           <div id="story-text"></div>
         </div>
       </div>
+      <div class="sandbox-tools" id="sandboxTools" hidden>
+        <button type="button" class="sb-tool active" data-tool="tree">🌲 Tree</button>
+        <button type="button" class="sb-tool" data-tool="battery">🔋 Battery</button>
+        <button type="button" class="sb-tool" data-tool="home">🏠 Home</button>
+        <button type="button" class="sb-tool" data-tool="start">🦊 Start</button>
+        <button type="button" class="sb-tool" data-tool="floor">🧹 Clear</button>
+      </div>
+      <div class="battery-bar" id="batteryBar" hidden>
+        <span>🔋 Batteries:</span>
+        <span id="batteryCount">0 / 0</span>
+      </div>
+      <div class="facing-hint" id="facingHint"></div>
       <div class="board-shell">
         <div class="board" id="board"></div>
       </div>
@@ -227,7 +309,7 @@
     </section>
 
     <!-- RIGHT: coding panel -->
-    <section class="card">
+    <section class="card card-code">
       <h3 class="panel-h">🧩 Command Blocks</h3>
       <div class="palette" id="palette"></div>
 
@@ -236,6 +318,7 @@
 
       <div class="controls">
         <button class="btn run" id="runBtn">▶ Run</button>
+        <button class="btn step" id="stepBtn">👣 Step</button>
         <button class="btn reset" id="resetBtn">↺ Clear</button>
         <button class="btn hint" id="hintBtn">💡</button>
       </div>
@@ -273,6 +356,7 @@ const LEVELS=[
     grid:["S...","###.","....",".##.","H..."], start:{x:0,y:0,dir:'E'},
     cmds:['move','left','right'],
     hint:"Sprocket faces ➡️ to start. Try: <b>Step ×3</b>, then <b>Turn Right</b>, then <b>Step ×4</b>, then <b>Turn Right</b>, then <b>Step ×3</b>.",
+    gentleHint:"Count the empty tiles before each turn. How many <b>Steps</b> until Sprocket needs to turn?",
     learned:"the order of instructions matters — that's a <b>sequence</b>, the most basic idea in all of coding!"
   },
   {
@@ -281,6 +365,7 @@ const LEVELS=[
     grid:["S.###","#..##","##B.#","###.B","####H"], start:{x:0,y:0,dir:'E'},
     cmds:['move','left','right','repeat'],
     hint:"Each stair is the same: <b>Step, Turn Right, Step, Turn Left</b>. Put those 4 blocks inside a <b>🔁 Repeat ×4</b> loop!",
+    gentleHint:"The same four moves repeat on every stair. That's a perfect job for a <b>loop</b>!",
     learned:"a <b>loop</b> repeats instructions so you don't have to write them over and over. Loops save coders huge amounts of work!"
   },
   {
@@ -289,6 +374,7 @@ const LEVELS=[
     grid:["S....","####.","..H#B","B###.","....."], start:{x:0,y:0,dir:'E'},
     cmds:['move','left','right','repeat','ifwall'],
     hint:"Inside a <b>🔁 Repeat ×16</b> loop, put: <b>If Tree Ahead → Turn Right</b>, then <b>Step</b>. That tiny rule solves the whole spiral!",
+    gentleHint:"Put the <b>If Tree</b> check <i>before</i> each <b>Step</b> inside one big loop. Sprocket will decide each turn herself!",
     learned:"a <b>conditional</b> (an \"if\" rule) lets a program make decisions on its own. Loops + conditionals = code that can handle anything!"
   }
 ];
@@ -301,16 +387,81 @@ const CMD_META={
   ifwall:{cls:'t-if',ncls:'n-if',ic:'🌲❓',label:'If Tree → Turn Right'}
 };
 
+const DIR_LABEL={N:'⬆️ North',E:'➡️ East',S:'⬇️ South',W:'⬅️ West'};
+const SAVE_KEY='sprocket-save-v1';
+const educatorMode=new URLSearchParams(location.search).get('educator')==='1';
+const SANDBOX_SIZE=5;
+const ALL_CMDS=['move','left','right','repeat','ifwall'];
+
+/* ---------- sound ---------- */
+let soundMuted=false;
+let audioCtx=null;
+function ensureAudio(){
+  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+}
+function playTone(freq,dur=.12,type='square',vol=.08){
+  if(soundMuted)return;
+  try{
+    ensureAudio();
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.value=vol;
+    o.connect(g);g.connect(audioCtx.destination);
+    o.start();o.stop(audioCtx.currentTime+dur);
+  }catch(e){}
+}
+const SFX={
+  step:()=>playTone(320,.06,'triangle',.06),
+  turn:()=>playTone(480,.08,'triangle',.06),
+  bonk:()=>{playTone(140,.2,'square',.1);setTimeout(()=>playTone(100,.15,'square',.08),80);},
+  collect:()=>{playTone(520,.1);setTimeout(()=>playTone(680,.12),90);},
+  collectAll:()=>{[520,640,760].forEach((f,i)=>setTimeout(()=>playTone(f,.1),i*90));},
+  win:()=>{[400,500,600,720].forEach((f,i)=>setTimeout(()=>playTone(f,.14,'triangle',.07),i*110));},
+  ifFire:()=>playTone(600,.1,'sine',.07),
+  ifSkip:()=>playTone(400,.06,'sine',.04)
+};
+
 /* ---------- state ---------- */
-let lvl=0, unlocked=0, uid=0;
-let program=[];          // array of nodes
-let activeBlock='main';  // 'main' or repeat-node id
-let running=false, won=false;
+let lvl=0, unlocked=0, uid=0, sandboxUnlocked=false;
+let program=[];
+let activeBlock='main';
+let running=false, won=false, stepMode=false;
 let bot={x:0,y:0,dir:'E'};
 let grid=[], gridW=0, gridH=0;
+let batteriesTotal=0, batteriesCollected=0;
+let failCounts={};
+let stepState=null;
+let sandboxMode=false;
+let sandboxTool='tree';
+let sandboxStart={x:0,y:0,dir:'E'};
 
 const $=id=>document.getElementById(id);
 const board=$('board'), programEl=$('program'), paletteEl=$('palette');
+
+/* ---------- persistence ---------- */
+function saveProgress(){
+  try{
+    localStorage.setItem(SAVE_KEY,JSON.stringify({
+      unlocked,sandboxUnlocked,soundMuted,failCounts
+    }));
+  }catch(e){}
+}
+function loadProgress(){
+  try{
+    const d=JSON.parse(localStorage.getItem(SAVE_KEY));
+    if(!d)return;
+    unlocked=d.unlocked??0;
+    sandboxUnlocked=d.sandboxUnlocked??false;
+    soundMuted=d.soundMuted??false;
+    failCounts=d.failCounts??{};
+  }catch(e){}
+}
+function updateSoundBtn(){
+  const b=$('soundBtn');
+  b.textContent=soundMuted?'🔇':'🔊';
+  b.classList.toggle('muted',soundMuted);
+  b.title=soundMuted?'Sound off — click to turn on':'Sound on — click to mute';
+}
 
 /* ---------- geometry ---------- */
 let TILE=58, GAP=8;
@@ -321,20 +472,85 @@ function computeTile(){
 }
 function cellPos(x,y){return [GAP + x*(TILE+GAP), GAP + y*(TILE+GAP)];}
 
+function countBatteriesInGrid(){
+  let n=0;
+  for(let y=0;y<gridH;y++)for(let x=0;x<gridW;x++)if(grid[y][x]==='B')n++;
+  return n;
+}
+function updateBatteryUI(){
+  const bar=$('batteryBar'),cnt=$('batteryCount');
+  if(batteriesTotal===0){bar.hidden=true;return;}
+  bar.hidden=false;
+  cnt.textContent=batteriesCollected+' / '+batteriesTotal;
+  bar.classList.toggle('complete',batteriesCollected>=batteriesTotal);
+}
+function updateFacingHint(){
+  $('facingHint').textContent='Facing: '+DIR_LABEL[bot.dir];
+}
+function getStartPos(){
+  if(sandboxMode)return{...sandboxStart};
+  return{...LEVELS[lvl].start};
+}
+function getLevelHint(){
+  if(sandboxMode)return'Build your own forest! Place blocks, then guide Sprocket home.';
+  const L=LEVELS[lvl];
+  const fails=failCounts[lvl]||0;
+  if(fails>=2&&L.gentleHint)return L.gentleHint;
+  return L.hint;
+}
+
 /* ---------- build a level ---------- */
 function loadLevel(i){
+  sandboxMode=false;
+  $('sandboxTools').hidden=true;
   lvl=i; program=[]; activeBlock='main'; running=false; won=false;
+  endStepMode(false);
   const L=LEVELS[i];
   grid=L.grid.map(r=>r.split('')); gridH=grid.length; gridW=grid[0].length;
   bot={...L.start};
+  batteriesCollected=0;
+  batteriesTotal=countBatteriesInGrid();
   $('concept-tag').textContent=L.concept;
   $('story-text').innerHTML=L.story;
   $('story-face').textContent=L.face;
-  $('hintBox').classList.remove('show');
-  $('hintBox').innerHTML='<b>Hint:</b> '+L.hint;
-  setStatus('info','Build Sprocket\u2019s code, then press <b>Run</b>! \uD83D\uDE80');
+  $('educatorBar').classList.toggle('show',educatorMode&&!sandboxMode);
+  refreshHint();
+  setStatus('info','Build Sprocket\u2019s code, then press <b>Run</b> or <b>Step</b>! \uD83D\uDE80');
   buildPalette(L.cmds);
   computeTile(); renderBoard(); placeBot(false); renderProgram(); renderChapters();
+  updateBatteryUI(); updateFacingHint();
+}
+
+function loadSandbox(){
+  sandboxMode=true;
+  lvl=-1; program=[]; activeBlock='main'; running=false; won=false;
+  endStepMode(false);
+  gridW=SANDBOX_SIZE; gridH=SANDBOX_SIZE;
+  grid=Array.from({length:gridH},()=>Array(gridW).fill('.'));
+  grid[0][0]='S';
+  grid[gridH-1][gridW-1]='H';
+  sandboxStart={x:0,y:0,dir:'E'};
+  bot={...sandboxStart};
+  batteriesCollected=0;
+  batteriesTotal=countBatteriesInGrid();
+  $('concept-tag').textContent='Sandbox';
+  $('story-text').innerHTML='You\u2019re the forest designer! Tap tiles to place <b>\uD83C\uDF32 trees</b>, <b>\uD83D\uDD0B batteries</b>, and <b>\uD83C\uDFE0 home</b>. Then code Sprocket through your maze.';
+  $('story-face').textContent='\uD83C\uDF32';
+  $('sandboxTools').hidden=false;
+  $('educatorBar').classList.remove('show');
+  $('hintBox').classList.remove('show');
+  $('hintBox').innerHTML='<b>Hint:</b> Build your own forest! Place blocks, then guide Sprocket home.';
+  setStatus('info','Design your forest, then build code and press <b>Run</b>! \uD83C\uDF32');
+  buildPalette(ALL_CMDS);
+  computeTile(); renderBoard(); placeBot(false); renderProgram(); renderChapters();
+  updateBatteryUI(); updateFacingHint();
+}
+
+function refreshHint(){
+  const hint=getLevelHint();
+  $('hintBox').innerHTML='<b>Hint:</b> '+hint;
+  if(educatorMode&&!sandboxMode)$('hintBox').classList.add('show');
+  else $('hintBox').classList.remove('show');
 }
 
 function buildPalette(cmds){
@@ -356,21 +572,54 @@ function renderBoard(){
   for(let y=0;y<gridH;y++)for(let x=0;x<gridW;x++){
     const ch=grid[y][x];
     const t=document.createElement('div');
+    const isStart=ch==='S';
     t.className='tile '+(ch==='#'?'tree':ch==='H'?'home':'floor');
+    if(sandboxMode&&!running)t.classList.add('editable');
     const [px,py]=cellPos(x,y);
     t.style.left=px+'px';t.style.top=py+'px';t.style.width=TILE+'px';t.style.height=TILE+'px';
-    if(ch==='#')t.textContent='🌲';
-    else if(ch==='H')t.textContent='🏠';
-    else if(ch==='B')t.innerHTML='<span class="battery">🔋</span>';
+    if(ch==='#')t.textContent='\uD83C\uDF32';
+    else if(ch==='H')t.textContent='\uD83C\uDFE0';
+    else if(ch==='B')t.innerHTML='<span class="battery">\uD83D\uDD0B</span>';
+    else if(isStart)t.textContent='\uD83E\uDD8A';
     t.dataset.x=x;t.dataset.y=y;
+    if(sandboxMode&&!running){
+      t.onclick=()=>applySandboxTool(x,y);
+    }
     board.appendChild(t);
   }
-  // sprocket element
   const s=document.createElement('div');
   s.className='sprocket';s.id='bot';
   s.style.width=TILE+'px';s.style.height=TILE+'px';
   s.innerHTML='<div class="bot-inner" id="botInner">'+botSVG()+'</div>';
   board.appendChild(s);
+}
+
+function applySandboxTool(x,y){
+  if(running||!sandboxMode)return;
+  const tool=sandboxTool;
+  if(tool==='start'){
+    for(let ry=0;ry<gridH;ry++)for(let rx=0;rx<gridW;rx++)if(grid[ry][rx]==='S')grid[ry][rx]='.';
+    grid[y][x]='S';
+    sandboxStart={x,y,dir:sandboxStart.dir};
+    bot={...sandboxStart};
+  }else if(tool==='home'){
+    for(let ry=0;ry<gridH;ry++)for(let rx=0;rx<gridW;rx++)if(grid[ry][rx]==='H')grid[ry][rx]='.';
+    if(grid[y][x]==='S')return;
+    grid[y][x]='H';
+  }else if(tool==='tree'){
+    if(grid[y][x]==='S'||grid[y][x]==='H')return;
+    grid[y][x]=grid[y][x]==='#'?'.':'#';
+  }else if(tool==='battery'){
+    if(grid[y][x]==='S'||grid[y][x]==='H'||grid[y][x]==='#')return;
+    grid[y][x]=grid[y][x]==='B'?'.':'B';
+  }else if(tool==='floor'){
+    if(grid[y][x]==='S'||grid[y][x]==='H')return;
+    grid[y][x]='.';
+  }
+  batteriesTotal=countBatteriesInGrid();
+  batteriesCollected=0;
+  updateBatteryUI();
+  renderBoard(); placeBot(false);
 }
 
 function botSVG(){
@@ -396,6 +645,11 @@ function placeBot(animate){
   const [px,py]=cellPos(bot.x,bot.y);
   s.style.transform=`translate(${px}px,${py}px) rotate(${DIR_DEG[bot.dir]}deg)`;
   if(!animate)void s.offsetWidth, s.style.transition='';
+  updateFacingHint();
+}
+function setWalking(on){
+  const inner=$('botInner');
+  if(inner)inner.classList.toggle('walking',on);
 }
 
 /* ---------- program building ---------- */
@@ -413,49 +667,90 @@ function addCommand(type){
   } else {
     getBlock().push({id:++uid,type});
   }
+  resetStepIfNeeded();
   renderProgram();
 }
 function removeNode(id){
   if(running)return;
-  // top level?
   let idx=program.findIndex(p=>p.id===id);
-  if(idx>-1){ if(program[idx].type==='repeat'&&activeBlock===id)activeBlock='main'; program.splice(idx,1); renderProgram(); return;}
-  for(const p of program){ if(p.type==='repeat'){const j=p.body.findIndex(b=>b.id===id); if(j>-1){p.body.splice(j,1);renderProgram();return;}}}
+  if(idx>-1){ if(program[idx].type==='repeat'&&activeBlock===id)activeBlock='main'; program.splice(idx,1); resetStepIfNeeded(); renderProgram(); return;}
+  for(const p of program){ if(p.type==='repeat'){const j=p.body.findIndex(b=>b.id===id); if(j>-1){p.body.splice(j,1);resetStepIfNeeded();renderProgram();return;}}}
+}
+function findNodeLocation(id){
+  let idx=program.findIndex(p=>p.id===id);
+  if(idx!==-1)return{arr:program,idx};
+  for(const p of program){
+    if(p.type==='repeat'){
+      const j=p.body.findIndex(b=>b.id===id);
+      if(j!==-1)return{arr:p.body,idx:j};
+    }
+  }
+  return null;
+}
+function moveNode(id,dir){
+  if(running)return;
+  const loc=findNodeLocation(id);
+  if(!loc)return;
+  const newIdx=loc.idx+dir;
+  if(newIdx<0||newIdx>=loc.arr.length)return;
+  const tmp=loc.arr[newIdx];
+  loc.arr[loc.idx]=loc.arr[newIdx];
+  loc.arr[newIdx]=tmp;
+  resetStepIfNeeded();
+  renderProgram();
+}
+function makeReorderBtns(id,arr,idx){
+  const wrap=document.createElement('span');
+  wrap.className='reorder';
+  const up=document.createElement('button');
+  up.textContent='\u2191'; up.title='Move up';
+  up.disabled=idx===0;
+  up.onclick=()=>moveNode(id,-1);
+  const down=document.createElement('button');
+  down.textContent='\u2193'; down.title='Move down';
+  down.disabled=idx===arr.length-1;
+  down.onclick=()=>moveNode(id,1);
+  wrap.append(up,down);
+  return wrap;
 }
 function changeCount(id,d){
   const n=program.find(p=>p.id===id); if(!n)return;
-  n.count=Math.max(1,Math.min(20,n.count+d)); renderProgram();
+  n.count=Math.max(1,Math.min(20,n.count+d)); resetStepIfNeeded(); renderProgram();
+}
+function resetStepIfNeeded(){
+  if(stepState)endStepMode(false);
 }
 
 function renderProgram(){
   programEl.innerHTML='';
-  $('active-flag').textContent = activeBlock!=='main' ? '✏️ adding inside loop' : '';
+  $('active-flag').textContent = activeBlock!=='main' ? '\u270F\uFE0F adding inside loop' : '';
   if(program.length===0){
     const e=document.createElement('div');e.className='empty-hint';
-    e.textContent='Tap a command block to start building Sprocket\u2019s code →';
+    e.textContent='Tap a command block to start building Sprocket\u2019s code \u2192';
     programEl.appendChild(e); return;
   }
-  program.forEach(n=>programEl.appendChild(renderNode(n)));
+  program.forEach((n,i)=>programEl.appendChild(renderNode(n,program,i)));
 }
-function renderNode(n){
+function renderNode(n,arr,idx){
   if(n.type==='repeat'){
     const wrap=document.createElement('div');
     wrap.className='loop'+(activeBlock===n.id?' active':'');
     const head=document.createElement('div');head.className='loop-head';
-    head.innerHTML=`🔁 Repeat
-      <span class="stepper"><button>−</button><span class="cnt">${n.count}</span><button>+</button></span> times`;
+    head.innerHTML=`\uD83D\uDD01 Repeat
+      <span class="stepper"><button>\u2212</button><span class="cnt">${n.count}</span><button>+</button></span> times`;
     const [minus,plus]=head.querySelectorAll('.stepper button');
     minus.onclick=()=>changeCount(n.id,-1); plus.onclick=()=>changeCount(n.id,1);
-    const x=document.createElement('button');x.className='x';x.textContent='✕';
+    head.appendChild(makeReorderBtns(n.id,arr,idx));
+    const x=document.createElement('button');x.className='x';x.textContent='\u2715';
     x.onclick=()=>removeNode(n.id); head.appendChild(x);
     wrap.appendChild(head);
     const body=document.createElement('div');body.className='loop-body';
     if(n.body.length===0){const m=document.createElement('div');m.className='mini';
-      m.textContent='(empty — add blocks here)';body.appendChild(m);}
-    else n.body.forEach(b=>body.appendChild(renderNode(b)));
+      m.textContent='(empty \u2014 add blocks here)';body.appendChild(m);}
+    else n.body.forEach((b,j)=>body.appendChild(renderNode(b,n.body,j)));
     wrap.appendChild(body);
     if(activeBlock===n.id){
-      const c=document.createElement('button');c.className='close-loop';c.textContent='✓ Done with loop';
+      const c=document.createElement('button');c.className='close-loop';c.textContent='\u2713 Done with loop';
       c.onclick=()=>{activeBlock='main';renderProgram();};
       wrap.appendChild(c);
     }
@@ -465,7 +760,8 @@ function renderNode(n){
   const m=CMD_META[n.type];
   const d=document.createElement('div');d.className='node '+m.ncls;d.dataset.id=n.id;
   d.innerHTML='<span>'+m.ic+'</span>'+m.label;
-  const x=document.createElement('button');x.className='x';x.textContent='✕';
+  d.appendChild(makeReorderBtns(n.id,arr,idx));
+  const x=document.createElement('button');x.className='x';x.textContent='\u2715';
   x.onclick=()=>removeNode(n.id); d.appendChild(x);
   return d;
 }
@@ -484,40 +780,167 @@ function isWall(x,y){ return tileAt(x,y)==='#'; }
 
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
+function prepareRun(){
+  const nodes=flatten(program);
+  const ops=nodes.map(n=>n.type);
+  if(ops.length===0){setStatus('bad','Add some blocks first! \uD83E\uDDE9');return null;}
+  return{nodes,ops};
+}
+
+function resetBotToStart(){
+  if(!sandboxMode){
+    const L=LEVELS[lvl];
+    grid=L.grid.map(r=>r.split(''));
+  }
+  bot={...getStartPos()};
+  batteriesCollected=0;
+  batteriesTotal=countBatteriesInGrid();
+  updateBatteryUI();
+  renderBoard();
+  placeBot(false);
+}
+
+async function executeOp(op,blockNum){
+  if(op==='left'){
+    bot.dir=DIRS[(DIRS.indexOf(bot.dir)+3)%4];
+    placeBot(true);
+    SFX.turn();
+    setStatus('info',`Block <b>${blockNum}</b>: turned left. Now facing ${DIR_LABEL[bot.dir]}.`);
+    await sleep(430);
+    return{ok:true};
+  }
+  if(op==='right'){
+    bot.dir=DIRS[(DIRS.indexOf(bot.dir)+1)%4];
+    placeBot(true);
+    SFX.turn();
+    setStatus('info',`Block <b>${blockNum}</b>: turned right. Now facing ${DIR_LABEL[bot.dir]}.`);
+    await sleep(430);
+    return{ok:true};
+  }
+  if(op==='ifwall'){
+    const[dx,dy]=VEC[bot.dir];
+    if(isWall(bot.x+dx,bot.y+dy)){
+      bot.dir=DIRS[(DIRS.indexOf(bot.dir)+1)%4];
+      placeBot(true);
+      SFX.ifFire();
+      setStatus('info',`\uD83C\uDF32 Block <b>${blockNum}</b>: tree ahead \u2014 <b>If</b> rule fired, turned right!`);
+      await sleep(430);
+    }else{
+      sensorBlink();
+      SFX.ifSkip();
+      setStatus('info',`\u2713 Block <b>${blockNum}</b>: no tree ahead \u2014 skipped the turn.`);
+      await sleep(380);
+    }
+    return{ok:true};
+  }
+  if(op==='move'){
+    const[dx,dy]=VEC[bot.dir], nx=bot.x+dx, ny=bot.y+dy;
+    if(isWall(nx,ny)){
+      await bonk(blockNum);
+      return{ok:false,reason:'bonk'};
+    }
+    setWalking(true);
+    SFX.step();
+    bot.x=nx;bot.y=ny;
+    placeBot(true);
+    await sleep(420);
+    setWalking(false);
+    if(tileAt(nx,ny)==='B'){
+      grid[ny][nx]='.';
+      collect(nx,ny);
+      checkAllBatteries();
+    }
+    if(tileAt(nx,ny)==='H'){
+      await sleep(120);
+      win();
+      return{ok:false,reason:'win'};
+    }
+    setStatus('info',`Block <b>${blockNum}</b>: stepped forward. ${DIR_LABEL[bot.dir]}`);
+    return{ok:true};
+  }
+  return{ok:true};
+}
+
 async function run(){
   if(running)return;
-  const ops=flatten(program).map(n=>n.type);
-  if(ops.length===0){setStatus('bad','Add some blocks first! 🧩');return;}
+  endStepMode(false);
+  const prep=prepareRun();
+  if(!prep)return;
   running=true; won=false; lockUI(true);
-  // reset bot to start
-  bot={...LEVELS[lvl].start}; renderBoard(); placeBot(false);
-  setStatus('info','Sprocket is following your code… 🦊');
+  resetBotToStart();
+  setStatus('info','Sprocket is following your code\u2026 \uD83E\uDD8A');
   await sleep(300);
-  const nodes=flatten(program);
+  const{nodes,ops}=prep;
 
   for(let i=0;i<ops.length;i++){
     highlight(nodes[i].id);
-    const op=ops[i];
-    if(op==='left'){bot.dir=DIRS[(DIRS.indexOf(bot.dir)+3)%4];placeBot(true);}
-    else if(op==='right'){bot.dir=DIRS[(DIRS.indexOf(bot.dir)+1)%4];placeBot(true);}
-    else if(op==='ifwall'){
-      const[dx,dy]=VEC[bot.dir];
-      if(isWall(bot.x+dx,bot.y+dy)){bot.dir=DIRS[(DIRS.indexOf(bot.dir)+1)%4];placeBot(true);}
-      else { sensorBlink(); }
+    const result=await executeOp(ops[i],i+1);
+    if(!result.ok){
+      running=false; lockUI(false); clearHL();
+      if(result.reason==='bonk')recordFail();
+      return;
     }
-    else if(op==='move'){
-      const[dx,dy]=VEC[bot.dir], nx=bot.x+dx, ny=bot.y+dy;
-      if(isWall(nx,ny)){ await bonk(); running=false; lockUI(false); clearHL(); return; }
-      bot.x=nx;bot.y=ny; placeBot(true);
-      await sleep(420);
-      if(tileAt(nx,ny)==='B'){grid[ny][nx]='.'; collect(nx,ny);}
-      if(tileAt(nx,ny)==='H'){ await sleep(120); win(); running=false; lockUI(false); clearHL(); return; }
-      continue;
-    }
-    await sleep(430);
   }
   clearHL(); running=false; lockUI(false);
-  setStatus('bad','Sprocket didn\u2019t reach home yet. Tweak the code and try again! 🔧');
+  if(!won){
+    setStatus('bad','Sprocket didn\u2019t reach home yet. Tweak the code and try again! \uD83D\uDD27');
+    recordFail();
+  }
+}
+
+function endStepMode(unlock=true){
+  stepState=null;
+  stepMode=false;
+  setWalking(false);
+  if(unlock){
+    running=false;
+    lockUI(false);
+    clearHL();
+  }
+}
+
+async function stepOnce(){
+  if(running&&!stepMode)return;
+  const prep=prepareRun();
+  if(!prep)return;
+
+  if(!stepState){
+    endStepMode(false);
+    stepState={nodes:prep.nodes,ops:prep.ops,index:0};
+    stepMode=true;
+    running=true;
+    lockUI(true);
+    resetBotToStart();
+    setStatus('info','Step mode \u2014 press <b>Step</b> or <b>Space</b> for each block. <b>Enter</b> runs all.');
+    await sleep(200);
+  }
+
+  if(stepState.index>=stepState.ops.length){
+    endStepMode(true);
+    if(!won){
+      setStatus('bad','End of code \u2014 Sprocket didn\u2019t reach home yet. \uD83D\uDD27');
+      recordFail();
+    }
+    return;
+  }
+
+  const i=stepState.index;
+  highlight(stepState.nodes[i].id);
+  const result=await executeOp(stepState.ops[i],i+1);
+  stepState.index++;
+  if(!result.ok){
+    endStepMode(true);
+    if(result.reason==='bonk')recordFail();
+  }
+}
+
+function recordFail(){
+  if(sandboxMode)return;
+  const key=lvl;
+  failCounts[key]=(failCounts[key]||0)+1;
+  saveProgress();
+  refreshHint();
+  if(failCounts[key]>=2&&!educatorMode)$('hintBox').classList.add('show');
 }
 
 function highlight(id){clearHL();const el=programEl.querySelector(`[data-id="${id}"]`);
@@ -525,42 +948,69 @@ function highlight(id){clearHL();const el=programEl.querySelector(`[data-id="${i
     else el.classList.add('running');}}
 function clearHL(){programEl.querySelectorAll('.running').forEach(e=>e.classList.remove('running'));}
 
-async function bonk(){
-  setStatus('bad','💥 Bonk! Sprocket bumped into a tree. Check her path!');
+async function bonk(blockNum){
+  const label=CMD_META.move.label;
+  setStatus('bad',`\uD83D\uDCA5 Bonk! Block <b>${blockNum}</b> (<b>${label}</b>) sent Sprocket into a tree. Check her path!`);
+  SFX.bonk();
   $('botInner').classList.add('bonk');
   await sleep(500);$('botInner').classList.remove('bonk');
+}
+function checkAllBatteries(){
+  if(batteriesTotal>0&&batteriesCollected>=batteriesTotal){
+    SFX.collectAll();
+    setStatus('good','\uD83C\uDF89 All batteries collected! Now get Sprocket home!');
+    const bar=$('batteryBar');
+    bar.classList.add('complete');
+  }
 }
 function sensorBlink(){const s=$('bot');if(s){s.animate([{filter:'drop-shadow(0 0 0 #b58cff)'},
   {filter:'drop-shadow(0 0 10px #b58cff)'},{filter:'none'}],{duration:380});}}
 function collect(x,y){
+  batteriesCollected++;
+  updateBatteryUI();
+  SFX.collect();
   const tile=board.querySelector(`.tile[data-x="${x}"][data-y="${y}"]`);
   if(tile)tile.innerHTML='';
   const[px,py]=cellPos(x,y);const sp=document.createElement('div');sp.className='spark';
-  sp.textContent='✨🔋';sp.style.left=(px+TILE*0.2)+'px';sp.style.top=py+'px';
+  sp.textContent='\u2728\uD83D\uDD0B';sp.style.left=(px+TILE*0.2)+'px';sp.style.top=py+'px';
   board.appendChild(sp);setTimeout(()=>sp.remove(),700);
 }
 
 function lockUI(on){
-  $('runBtn').disabled=on;$('resetBtn').disabled=on;
+  $('runBtn').disabled=on;$('resetBtn').disabled=on;$('stepBtn').disabled=on;
   paletteEl.querySelectorAll('.cmd').forEach(b=>b.disabled=on);
-  programEl.querySelectorAll('.x,.stepper button,.close-loop').forEach(b=>b.disabled=on);
+  programEl.querySelectorAll('.x,.stepper button,.close-loop,.reorder button').forEach(b=>b.disabled=on);
+  if(sandboxMode&&!on){
+    document.querySelectorAll('.sb-tool').forEach(b=>b.disabled=false);
+  }else if(sandboxMode){
+    document.querySelectorAll('.sb-tool').forEach(b=>b.disabled=on);
+  }
 }
 function setStatus(kind,html){const s=$('status');s.className='status '+kind;s.innerHTML=html;}
 
 /* ---------- win ---------- */
 function win(){
   won=true;
-  setStatus('good','🎉 Sprocket made it home!');
-  unlocked=Math.max(unlocked,lvl+1);
+  SFX.win();
+  setStatus('good','\uD83C\uDF89 Sprocket made it home!');
+  if(!sandboxMode){
+    unlocked=Math.max(unlocked,lvl+1);
+    if(unlocked>=LEVELS.length)sandboxUnlocked=true;
+    saveProgress();
+  }
   renderChapters();
-  const last = lvl===LEVELS.length-1;
-  $('winEmoji').textContent = last?'🏆':'🎉';
-  $('winTitle').textContent = last?'Master Coder!':'You did it!';
-  $('winMsg').innerHTML = last
-    ? 'Sprocket is home for good — and you\u2019ve learned the three building blocks of <b>every</b> program!'
+  const last=!sandboxMode&&lvl===LEVELS.length-1;
+  $('winEmoji').textContent = last?'🏆':'\uD83C\uDF89';
+  $('winTitle').textContent = sandboxMode?'Sandbox solved!':last?'Master Coder!':'You did it!';
+  $('winMsg').innerHTML = sandboxMode
+    ? 'You designed the maze <i>and</i> coded the solution. Amazing!'
+    : last
+    ? 'Sprocket is home for good \u2014 and you\u2019ve learned the three building blocks of <b>every</b> program!'
     : 'Sprocket is one step closer to her cozy den.';
-  $('winLearned').innerHTML = '🧠 You learned that '+LEVELS[lvl].learned;
-  $('nextBtn').textContent = last?'Play Again ↺':'Next Chapter →';
+  $('winLearned').innerHTML = sandboxMode
+    ? '\uD83E\uDDE0 You combined <b>design</b> and <b>coding</b> \u2014 that\u2019s how real games are built!'
+    : '\uD83E\uDDE0 You learned that '+LEVELS[lvl].learned;
+  $('nextBtn').textContent = last?'Play Again \u21BA':sandboxMode?'Back to Sandbox':'Next Chapter \u2192';
   confetti();
   setTimeout(()=>$('overlay').classList.add('show'),650);
 }
@@ -579,27 +1029,110 @@ function renderChapters(){
   LEVELS.forEach((L,i)=>{
     const c=document.createElement('button');
     const locked=i>unlocked;
-    const done=i<unlocked && i!==lvl;
-    c.className='chip-ch'+(i===lvl?' active':'')+(locked?' locked':'')+(done?' done':'');
+    const done=i<unlocked && i!==lvl && !sandboxMode;
+    c.className='chip-ch'+(i===lvl&&!sandboxMode?' active':'')+(locked?' locked':'')+(done?' done':'');
     c.innerHTML=`<span class="num">${i+1}</span> ${L.name}`;
     if(!locked)c.onclick=()=>{ $('overlay').classList.remove('show'); loadLevel(i); };
     nav.appendChild(c);
+  });
+  if(sandboxUnlocked||unlocked>=LEVELS.length){
+    const sb=document.createElement('button');
+    sb.className='chip-ch'+(sandboxMode?' active':'');
+    sb.innerHTML='<span class="num">\uD83C\uDF32</span> Sandbox';
+    sb.onclick=()=>{ $('overlay').classList.remove('show'); loadSandbox(); };
+    nav.appendChild(sb);
+  }
+}
+
+function exportLevelGrid(){
+  const rows=grid.map(row=>row.join(''));
+  const text=rows.join('\n')+'\n\nStart: '+JSON.stringify(getStartPos());
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>{
+      setStatus('good','Level grid copied to clipboard! \uD83D\uDCCB');
+    }).catch(()=>fallbackExport(text));
+  }else fallbackExport(text);
+}
+function fallbackExport(text){
+  const ta=document.createElement('textarea');
+  ta.value=text;document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');setStatus('good','Level grid copied! \uD83D\uDCCB');}
+  catch(e){setStatus('info','Grid:<br><code style="font-size:12px">'+text.replace(/\n/g,'<br>')+'</code>');}
+  document.body.removeChild(ta);
+}
+
+/* ---------- mobile tabs ---------- */
+function setMobileTab(tab){
+  const grid=$('boardGrid');
+  grid.classList.remove('tab-forest','tab-code');
+  grid.classList.add('tab-'+tab);
+  document.querySelectorAll('.mobile-tabs .tab-btn').forEach(b=>{
+    b.classList.toggle('active',b.dataset.tab===tab);
   });
 }
 
 /* ---------- buttons ---------- */
 $('runBtn').onclick=run;
-$('resetBtn').onclick=()=>{ if(running)return; program=[];activeBlock='main';renderProgram();
-  bot={...LEVELS[lvl].start};renderBoard();placeBot(false);
-  setStatus('info','Cleared! Build a new plan for Sprocket. 🧩');};
+$('stepBtn').onclick=stepOnce;
+$('resetBtn').onclick=()=>{ if(running)return; program=[];activeBlock='main';endStepMode(false);renderProgram();
+  bot={...getStartPos()};batteriesCollected=0;updateBatteryUI();renderBoard();placeBot(false);
+  setStatus('info','Cleared! Build a new plan for Sprocket. \uD83E\uDDE9');};
 $('hintBtn').onclick=()=>$('hintBox').classList.toggle('show');
 $('nextBtn').onclick=()=>{ $('overlay').classList.remove('show');
-  loadLevel(lvl<LEVELS.length-1?lvl+1:0); };
+  if(sandboxMode){loadSandbox();return;}
+  if(lvl<LEVELS.length-1)loadLevel(lvl+1);
+  else loadLevel(0);
+};
+$('soundBtn').onclick=()=>{soundMuted=!soundMuted;updateSoundBtn();saveProgress();};
+$('exportBtn').onclick=exportLevelGrid;
+
+document.querySelectorAll('.mobile-tabs .tab-btn').forEach(b=>{
+  b.onclick=()=>setMobileTab(b.dataset.tab);
+});
+
+document.querySelectorAll('.sb-tool').forEach(b=>{
+  b.onclick=()=>{
+    sandboxTool=b.dataset.tool;
+    document.querySelectorAll('.sb-tool').forEach(t=>t.classList.remove('active'));
+    b.classList.add('active');
+  };
+});
+
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input,textarea'))return;
+  if(e.key==='Enter'){
+    e.preventDefault();
+    if(running&&stepMode){endStepMode(true);run();}
+    else if(!running)run();
+    return;
+  }
+  if(e.key===' '&&!e.repeat){
+    e.preventDefault();
+    if(running&&stepMode)stepOnce();
+    else if(!running)stepOnce();
+    return;
+  }
+  if(running)return;
+  if(e.key==='ArrowLeft'){
+    e.preventDefault();
+    bot.dir=DIRS[(DIRS.indexOf(bot.dir)+3)%4];
+    placeBot(true);
+    setStatus('info','Preview: turned left. Facing '+DIR_LABEL[bot.dir]+'. (resets on Run)');
+  }
+  if(e.key==='ArrowRight'){
+    e.preventDefault();
+    bot.dir=DIRS[(DIRS.indexOf(bot.dir)+1)%4];
+    placeBot(true);
+    setStatus('info','Preview: turned right. Facing '+DIR_LABEL[bot.dir]+'. (resets on Run)');
+  }
+});
 
 window.addEventListener('resize',()=>{ if(!running){computeTile();renderBoard();placeBot(false);} });
 
 /* ---------- go ---------- */
-loadLevel(0);
+loadProgress();
+updateSoundBtn();
+loadLevel(Math.min(unlocked,LEVELS.length-1));
 </script>
 </body>
 </html>
